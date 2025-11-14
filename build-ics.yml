@@ -1,0 +1,42 @@
+name: Build FLSH ICS
+
+on:
+  schedule:
+    - cron: "0 6 * * *"   # tous les jours à 06:00 UTC
+  workflow_dispatch:       # lancement manuel possible
+  push:
+    paths:
+      - "script_flsh.py"
+      - "requirements.txt"
+      - ".github/workflows/build-ics.yml"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # nécessaire pour pouvoir push
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Generate ICS
+        run: python script_flsh.py
+
+      - name: Commit and push ICS
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add flsh-agenda.ics
+          git commit -m "Update flsh-agenda.ics" || echo "No changes to commit"
+          git push
